@@ -12,10 +12,9 @@
                    FontSize="15"
                    FontWeight="Bold"
                    Margin="10">Message :</Label>
+           
             <Button DockPanel.Dock="Right"
-                     Width="100" Margin="2,10,10,10" Height="40" BorderBrush="Red">Leave</Button>
-            <Button DockPanel.Dock="Right"
-                    Click="Button_Click"
+                    Click="JoinBtn"
                      Width="100" Margin="2,10,2,10" Height="40" BorderBrush="Green">Join</Button>
             <Button Click="SendBtn" 
                 DockPanel.Dock="Right"

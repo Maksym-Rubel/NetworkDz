@@ -66,7 +66,7 @@ internal class Program
         {
             Name = parts[0];
             messages1 = parts[1];
-            return $"{Name}{":",-20}{messages1,-100}{DateTime.Now.ToShortTimeString}";   
+            return $"{Name}{":",-5}{messages1,-205}{DateTime.Now.ToShortTimeString()}";   
         }
         return "";
 

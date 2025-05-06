@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Reflection.PortableExecutable;
 
 namespace Text
 {
@@ -23,6 +24,8 @@ namespace Text
         const string serverAddress = "127.0.0.1";
         const string port = "4040";
         string nickname = "Anonym";
+        bool isJoin = false;
+     
         public MainWindow()
         {
             InitializeComponent();
@@ -30,48 +33,108 @@ namespace Text
 
         private async void SendBtn(object sender, RoutedEventArgs e)
         {
-            IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse(serverAddress), int.Parse(port));
-            string message = nickname + "|*|" + msgTextBox.Text;
-
-            TcpClient client = null;
-
-            try
+            if(isJoin)
             {
-                client = new TcpClient();
-                await client.ConnectAsync(ipPoint);
-                NetworkStream stream = client.GetStream();
+                if(msgTextBox.Text != "" || !string.IsNullOrWhiteSpace(msgTextBox.Text))
+                {
+                    IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4040);
+                    string message = nickname + "|*|" + msgTextBox.Text;
+                    msgTextBox.Text = "";
+                    TcpClient client = null;
 
-                StreamWriter sw = new StreamWriter(stream);
-                await sw.WriteLineAsync(message);
-                await sw.FlushAsync();
+                    try
+                    {
+                        client = new TcpClient();
+                        await client.ConnectAsync(ipPoint);
+                        NetworkStream stream = client.GetStream();
 
-                StreamReader sr = new StreamReader(stream);
-                string result = await sr.ReadLineAsync();
-                sr.Close();
-                sw.Close();
-                stream.Close();
+                        StreamWriter sw = new StreamWriter(stream);
+                        await sw.WriteLineAsync(message);
+                        await sw.FlushAsync();
 
-                list.Items.Add(result);
+                        StreamReader sr = new StreamReader(stream);
+                        string result = await sr.ReadLineAsync();
+                        sr.Close();
+                        sw.Close();
+                        stream.Close();
 
+                        list.Items.Add(result);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                    finally
+                    {
+                        client?.Close();
+                    }
+                }
+
+               
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            finally
-            {
-                client?.Close();
-            }
+            
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+
+        // В мене лістенера не виходить зробить
+        private async void JoinBtn(object sender, RoutedEventArgs e)
         {
 
+            SecondWindow secondWindow = new SecondWindow();
+            
+            bool? result = secondWindow.ShowDialog();
+                if (result == true)
+                {
+                    isJoin = true;
+                    nickname = secondWindow.UserName;
+                }
+
+            //    if (result == true)
+            //    {
+            //        client = new TcpClient();
+            //        await client.ConnectAsync(serverAddress, int.Parse(port));
+            //        var stream = client.GetStream();
+
+            //        sr = new StreamReader(stream);
+            //        sw = new StreamWriter(stream) { AutoFlush = true };
+
+
+            //        Task.Run(() => ListenForMessages());
+
+
+            //    }
+
+
         }
 
+        //private async Task ListenForMessages()
+        //{
+        //    try
+        //    {
+        //        while (isListening)
+        //        {
+        //            string? response = await sr.ReadLineAsync();
+        //            if (response != null)
+        //            {
+
+        //                list.Items.Add($"Відповідь від сервера: {response}");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        list.Items.Add($"Помилка прослуховування: {ex.Message}");
+
+        //    }
+        //}
         private void msgTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-
+            if(e.Key == Key.Enter)
+            {
+                SendBtn(sender, e);
+            }
+            
         }
     }
 }
