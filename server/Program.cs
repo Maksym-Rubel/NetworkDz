@@ -9,7 +9,7 @@ internal class Program
 
     static List<StreamWriter> clients = new List<StreamWriter>();
     public static class Settings
-    { 
+    {  
         public const int MaxClient = 1; 
     }
     private static void Main(string[] args)

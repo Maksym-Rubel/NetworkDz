@@ -97,7 +97,7 @@ namespace Text
             sw?.Close();
             client?.Close();
         }
-
+         
         private void DisconnectBtn(object sender, RoutedEventArgs e)
         {
             try
