@@ -24,13 +24,26 @@ internal class Program
 
             while (true)
             {
-                if (clients.Count < Settings.MaxClient)
+                TcpClient client = listener.AcceptTcpClient();
+                Task.Run(() =>
                 {
-                    
-                    TcpClient client = listener.AcceptTcpClient();
-                    Task.Run(() => ServerClient(client)); 
-                }
-               
+                    if (clients.Count <= Settings.MaxClient)
+                    {
+                        ServerClient(client);
+                    }
+                    else
+                    {
+                        
+                        using (NetworkStream ns = client.GetStream())
+                        using (StreamWriter sw = new StreamWriter(ns))
+                        {
+                            sw.WriteLine("Server full. Try again later.");
+                            sw.Flush();
+                        }
+                        client.Close();
+                    }
+                });
+
             }
         }
         catch (Exception ex)
@@ -58,8 +71,18 @@ internal class Program
             {
                 clients.Add(sw);
             }
-        
-            
+            else
+            {
+                sw.WriteLine("Server full. Try again later.");
+                sw.Flush();
+                sw.Close();
+                sr.Close();
+                client.Close();
+                return;
+            }
+
+
+
 
             while ((message = sr.ReadLine()!) != null)
             {
