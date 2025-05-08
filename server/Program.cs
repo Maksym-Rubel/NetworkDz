@@ -6,6 +6,12 @@ using System.Net;
 
 internal class Program
 {
+
+    static List<StreamWriter> clients = new List<StreamWriter>();
+    public static class Settings
+    {  
+        public const int MaxClient = 1; 
+    }
     private static void Main(string[] args)
     {
         IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4040);
@@ -19,7 +25,25 @@ internal class Program
             while (true)
             {
                 TcpClient client = listener.AcceptTcpClient();
-                Task.Run(() => ServerClient(client));
+                Task.Run(() =>
+                {
+                    if (clients.Count <= Settings.MaxClient)
+                    {
+                        ServerClient(client);
+                    }
+                    else
+                    {
+                        
+                        using (NetworkStream ns = client.GetStream())
+                        using (StreamWriter sw = new StreamWriter(ns))
+                        {
+                            sw.WriteLine("Server full. Try again later.");
+                            sw.Flush();
+                        }
+                        client.Close();
+                    }
+                });
+
             }
         }
         catch (Exception ex)
@@ -43,12 +67,36 @@ internal class Program
 
 
             StreamWriter sw = new StreamWriter(ns);
-          
-            sw.WriteLine(GetMessage(message));
+            if (clients.Count <= Settings.MaxClient)
+            {
+                clients.Add(sw);
+            }
+            else
+            {
+                sw.WriteLine("Server full. Try again later.");
+                sw.Flush();
+                sw.Close();
+                sr.Close();
+                client.Close();
+                return;
+            }
 
-            sw.Close();
-            sr.Close();
-            ns.Close();
+
+
+
+            while ((message = sr.ReadLine()!) != null)
+            {
+                string response = GetMessage(message);
+                foreach (var sw1 in clients)
+                {
+                    try { sw1.WriteLine(response);
+                        sw1.Flush();
+                    } catch { }
+                }
+            }
+
+
+            CloseConnection(client, sr, sw);
 
         }
         catch (Exception ex)
@@ -66,10 +114,41 @@ internal class Program
         {
             Name = parts[0];
             messages1 = parts[1];
-            return $"{Name}{":",-20}{messages1,-100}{DateTime.Now.ToShortTimeString}";   
+            return $"{Name}{":",-5}{messages1,-205}{DateTime.Now.ToShortTimeString()}";
         }
         return "";
 
     }
 
+
+    private static void CloseConnection(TcpClient client1, StreamReader sr1, StreamWriter sw1)
+    {
+        try
+        {
+            if (sw1 != null)
+            {
+                sw1.Close();
+            }
+            if (sr1 != null)
+            {
+                sr1.Close();
+            }
+            if (client1 != null)
+            {
+                client1.Close();
+            }
+
+
+            if(sw1 != null && clients.Contains(sw1))
+        {
+                clients.Remove(sw1);
+                Console.WriteLine("Client removed from the list.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while disconnecting: {ex.Message}");
+        }
+    }
 }
+
